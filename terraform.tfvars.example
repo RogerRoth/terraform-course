@@ -1,0 +1,19 @@
+# Example terraform.tfvars file
+# Copy this file to terraform.tfvars and adjust the values as needed
+
+# AWS Region for primary deployment
+# aws_region = "us-east-1"
+
+# AWS Region for secondary deployment
+# aws_region_secondary = "us-west-2"
+
+# Instance type for EC2 instances
+# instance_type = "t2.micro"
+
+# Custom tags for resources
+# project_name = "terraform-course"
+# environment = "dev"
+
+# Additional configuration examples:
+# key_pair_name = "your-key-pair-name"
+# allowed_cidr_blocks = ["0.0.0.0/0"] 
