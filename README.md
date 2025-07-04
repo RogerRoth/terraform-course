@@ -56,8 +56,10 @@ docker run -it -v $PWD:/app -w /app --entrypoint "" hashicorp/terraform:light sh
 
 ### Comandos Principais
 
+#### 🚀 Comandos Básicos
+
 ```bash
-# Inicializar o projeto
+# Inicializar o projeto (sempre execute primeiro)
 terraform init -upgrade
 
 # Visualizar o plano de execução
@@ -72,6 +74,39 @@ terraform destroy
 # Acessar o console interativo
 terraform console
 ```
+
+#### 🔒 Comandos com State Lock
+
+**Por que adicionamos o DynamoDB?**
+O DynamoDB serve como um "trava" para evitar que duas pessoas executem `terraform apply` ao mesmo tempo, o que poderia corromper o estado do Terraform. É uma proteção essencial para trabalho em equipe!
+
+**Quando usar `-lock=false`:**
+
+**Na primeira execução (DynamoDB ainda não existe):**
+```bash
+# Criar o DynamoDB primeiro
+terraform plan -out=tfplan -lock=false
+terraform apply tfplan -lock=false
+```
+> ⚠️ **Por que `-lock=false` aqui?** Porque o DynamoDB ainda não existe, então não pode fazer o lock!
+
+**Depois que o DynamoDB foi criado (uso normal):**
+```bash
+# Use sempre estes comandos
+terraform plan -out=tfplan
+terraform apply tfplan
+terraform destroy
+```
+> ✅ **Agora o lock funciona!** O DynamoDB já existe e protege suas execuções.
+
+**Apenas em emergências (lock travado):**
+```bash
+# Use apenas se o lock estiver travado
+terraform plan -out=tfplan -lock=false
+terraform apply tfplan -lock=false
+terraform destroy -lock=false
+```
+> 🆘 **Cuidado!** Use só se o lock estiver travado e você tiver certeza que ninguém mais está mexendo no Terraform.
 
 ## 📦 Recursos Criados
 

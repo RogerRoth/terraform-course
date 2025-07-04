@@ -9,6 +9,7 @@ terraform {
 
   backend "s3" {
     bucket = "descomplicando-terraform-course"
+    dynamodb_table = "terraform-state-lock"
     key    = "terraform-test.tfstate"
     region = "us-east-1"
   }
