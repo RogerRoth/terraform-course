@@ -1,21 +1,9 @@
 data "aws_ami" "ubuntu-east-1" {
-  provider = aws.east-1
+  provider    = aws.east-1
   most_recent = true
 
   filter {
-    name = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
-  }
-
-  owners = ["099720109477"]
-}
-
-data "aws_ami" "ubuntu-west-2" {
-  provider = aws.west-2
-  most_recent = true
-
-  filter {
-    name = "name"
+    name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
 
@@ -23,19 +11,12 @@ data "aws_ami" "ubuntu-west-2" {
 }
 
 resource "aws_instance" "web-east-1" {
+  count         = var.instance_count
   provider      = aws.east-1
   ami           = data.aws_ami.ubuntu-east-1.id
-  instance_type = "t2.micro"
+  instance_type = var.instance_type
   tags = {
-    Name = "terraform-test-east-1"
-  }
-}
-
-resource "aws_instance" "web-west-2" {
-  provider      = aws.west-2
-  ami           = data.aws_ami.ubuntu-west-2.id
-  instance_type = "t2.micro"
-  tags = {
-    Name = "terraform-test-west-2"
+    Name    = "${var.project_name}-east-1-${count.index + 1}"
+    Project = var.project_name
   }
 }
