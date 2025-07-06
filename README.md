@@ -108,6 +108,153 @@ terraform destroy -lock=false
 ```
 > 🆘 **Cuidado!** Use só se o lock estiver travado e você tiver certeza que ninguém mais está mexendo no Terraform.
 
+#### 🔧 Comandos de Manipulação de Estado
+
+**terraform state mv - Mover/Renomear recursos:**
+```bash
+# Renomear um recurso no estado
+terraform state mv aws_instance.old_name aws_instance.new_name
+
+# Mover recurso para um módulo
+terraform state mv aws_instance.web module.servers.aws_instance.web
+
+# Mover recurso de um módulo para outro
+terraform state mv module.old.aws_instance.web module.new.aws_instance.web
+```
+> 🔄 **Quando usar:** Quando você renomeia recursos no código ou reorganiza módulos sem querer destruir/recriar.
+
+**terraform state list - Listar recursos:**
+```bash
+# Listar todos os recursos no estado
+terraform state list
+
+# Filtrar recursos específicos
+terraform state list | grep aws_instance
+```
+> 📋 **Quando usar:** Para ver todos os recursos gerenciados pelo Terraform.
+
+**terraform state show - Detalhes de um recurso:**
+```bash
+# Ver detalhes de um recurso específico
+terraform state show aws_instance.web-east-1
+
+# Ver em formato JSON
+terraform state show -json aws_instance.web-east-1
+```
+> 🔍 **Quando usar:** Para investigar propriedades específicas de um recurso.
+
+**terraform state rm - Remover do estado:**
+```bash
+# Remove recurso do estado (sem destruir na AWS)
+terraform state rm aws_instance.web-east-1
+
+# Remover múltiplos recursos
+terraform state rm aws_instance.web-east-1 aws_instance.web-west-2
+```
+> ⚠️ **Cuidado:** O recurso continua na AWS, mas Terraform para de gerenciá-lo!
+
+**Exemplo prático - Renomeando uma instância:**
+```bash
+# 1. Verificar estado atual
+terraform state list
+
+# 2. Renomear no estado
+terraform state mv aws_instance.old_name aws_instance.new_name
+
+# 3. Atualizar o código .tf com o novo nome
+
+# 4. Verificar que não há mudanças
+terraform plan
+```
+
+#### 📥 Terraform Import - Importar Recursos Existentes
+
+**Para que serve?**
+O `terraform import` permite trazer recursos que já existem na AWS para o controle do Terraform, sem precisar recriá-los.
+
+**terraform import - Importar recursos:**
+```bash
+# Importar uma instância EC2 existente
+terraform import aws_instance.web i-1234567890abcdef0
+
+# Importar um bucket S3
+terraform import aws_s3_bucket.my_bucket my-bucket-name
+
+# Importar uma tabela DynamoDB
+terraform import aws_dynamodb_table.state_lock terraform-state-lock
+
+# Importar um security group
+terraform import aws_security_group.web sg-12345678
+```
+> 📥 **Quando usar:** Quando você tem recursos na AWS que foram criados manualmente e quer gerenciá-los com Terraform.
+
+**Processo completo de import:**
+```bash
+# 1. Criar o bloco de recurso vazio no .tf (sem propriedades)
+resource "aws_instance" "web" {
+  # Deixe vazio inicialmente
+}
+
+# 2. Importar o recurso existente
+terraform import aws_instance.web i-1234567890abcdef0
+
+# 3. Ver as propriedades atuais
+terraform state show aws_instance.web
+
+# 4. Preencher o bloco .tf com as propriedades necessárias
+resource "aws_instance" "web" {
+  ami           = "ami-0123456789abcdef0"
+  instance_type = "t2.micro"
+  # ... outras propriedades
+}
+
+# 5. Verificar se está sincronizado
+terraform plan
+```
+
+**Comandos úteis para descobrir IDs:**
+```bash
+# Listar instâncias EC2
+aws ec2 describe-instances --query 'Reservations[].Instances[].{ID:InstanceId,Name:Tags[?Key==`Name`].Value|[0],State:State.Name}'
+
+# Listar buckets S3
+aws s3 ls
+
+# Listar tabelas DynamoDB
+aws dynamodb list-tables
+
+# Listar security groups
+aws ec2 describe-security-groups --query 'SecurityGroups[].{ID:GroupId,Name:GroupName}'
+```
+
+**⚠️ Dicas importantes:**
+- **Sempre faça backup** do estado antes de importar
+- **Comece com o bloco vazio** no .tf
+- **Use `terraform state show`** para ver as propriedades
+- **Ajuste o .tf** para evitar mudanças desnecessárias
+- **Teste com `terraform plan`** antes de aplicar
+
+**Exemplo prático - Importando uma instância EC2:**
+```bash
+# 1. Descobrir o ID da instância
+aws ec2 describe-instances --query 'Reservations[].Instances[].InstanceId'
+
+# 2. Criar bloco vazio no servers/ec2.tf
+resource "aws_instance" "existing_web" {
+  # Será preenchido após import
+}
+
+# 3. Importar
+terraform import aws_instance.existing_web i-0123456789abcdef0
+
+# 4. Ver propriedades
+terraform state show aws_instance.existing_web
+
+# 5. Preencher o bloco com as propriedades essenciais
+# 6. Verificar sincronização
+terraform plan
+```
+
 ## 📦 Recursos Criados
 
 Este projeto cria os seguintes recursos AWS:
